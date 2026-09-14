@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cotización - Aires Universal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --navy: #0d2f57;
+    --blue: #1657a8;
+    --blue-light: #eaf1fb;
+    --cyan: #2fb6c9;
+    --cyan-dark: #1c8f9f;
+    --bg: #eef2f7;
+    --card: #ffffff;
+    --border: #e1e7ef;
+    --text: #1c2430;
+    --muted: #64748b;
+    --danger: #d94b4b;
+  }
+  *{ box-sizing: border-box; }
+  html, body{ margin:0; padding:0; }
+  body{
+    font-family: 'Inter', Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+  }
+
+  /* ---------- inputs ---------- */
+  input[type="text"], input[type="number"]{
+    font-family: 'Inter', sans-serif;
+    border: none;
+    border-bottom: 1.5px dashed #c3cede;
+    background: transparent;
+    padding: 3px 2px;
+    font-size: 13.5px;
+    color: var(--text);
+    width: 100%;
+    border-radius: 2px;
+  }
+  input.autosize{ width:auto; min-width:18px; max-width:100%; flex:0 0 auto; }
+  input[type="text"]:focus, input[type="number"]:focus{
+    outline:none; border-bottom:1.5px solid var(--cyan-dark); background:#eefbfc;
+  }
+  input::placeholder{ color:#a7b3c2; }
+  textarea.desc{
+    font-family:'Inter', sans-serif; border:none; border-bottom:1.5px dashed #c3cede;
+    background:transparent; padding:3px 2px; font-size:13.5px; line-height:1.35;
+    color:var(--text); width:100%; border-radius:2px; resize:none; overflow:hidden;
+    display:block; white-space:pre-wrap; word-break:break-word;
+  }
+  textarea.desc:focus{ outline:none; border-bottom:1.5px solid var(--cyan-dark); background:#eefbfc; }
+  input[type="checkbox"]{ width:18px; height:18px; accent-color: var(--cyan-dark); cursor:pointer; }
+
+  /* ---------- layout ---------- */
+  .app-layout{ display:grid; grid-template-columns: 260px 1fr; min-height:100vh; }
+  .sidebar{
+    background: var(--navy); color:#fff; padding:22px 16px;
+    display:flex; flex-direction:column; gap:6px;
+    position:sticky; top:0; height:100vh; overflow-y:auto;
+  }
+  .sidebar h1{ font-family:'Poppins', sans-serif; font-size:17px; margin:0 0 4px; }
+  .sidebar .sub{ font-size:11.5px; color:#9db3d0; margin-bottom:18px; }
+  .sidebar nav{ display:flex; flex-direction:column; gap:4px; }
+  .sidebar button.nav-btn{
+    background:transparent; border:none; color:#cfe0f5; text-align:left;
+    padding:11px 14px; border-radius:9px; font-size:14px; font-weight:500;
+    cursor:pointer; font-family:'Inter', sans-serif;
+    display:flex; align-items:center; gap:10px;
+  }
+  .sidebar button.nav-btn:hover{ background: rgba(255,255,255,0.08); }
+  .sidebar button.nav-btn.active{
+    background: linear-gradient(135deg, #1657a8, #1c8f9f); color:#fff; font-weight:600;
+  }
+  .sidebar .side-footer{
+    margin-top:auto; font-size:11px; color:#7d93b3;
+    padding-top:16px; border-top:1px solid rgba(255,255,255,0.08);
+  }
+  .main-area{ padding:24px 28px 60px; overflow-x:hidden; }
+  .view{ display:none; }
+  .view.active{ display:block; }
+
+  /* ---------- dashboard ---------- */
+  .dash-title{ font-family:'Poppins', sans-serif; font-size:22px; color:var(--navy); margin:0 0 18px; }
+  .dash-grid{
+    display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap:16px; margin-bottom:26px;
+  }
+  .dash-card{
+    background:#fff; border-radius:14px; padding:18px 20px;
+    box-shadow:0 6px 20px rgba(13,47,87,0.07); border:1px solid #eef2f7;
+  }
+  .dash-card .dc-label{
+    font-size:12px; color:var(--muted); text-transform:uppercase;
+    letter-spacing:.5px; font-weight:600;
+  }
+  .dash-card .dc-value{
+    font-family:'Poppins', sans-serif; font-size:26px; font-weight:700;
+    color:var(--blue); margin-top:6px;
+  }
+  .dash-card .dc-value.small{ font-size:20px; }
+
+  /* ---------- toolbar ---------- */
+  .view-toolbar{ display:flex; gap:10px; flex-wrap:wrap; margin-bottom:18px; }
+  .view-toolbar button{
+    border:none; padding:10px 16px; border-radius:9px; font-size:14px;
+    font-weight:600; cursor:pointer; font-family:'Inter', sans-serif;
+  }
+  .btn-primary{ background: linear-gradient(135deg, var(--blue), var(--cyan-dark)); color:#fff; }
+  .btn-secondary{ background:#fff; color:var(--blue); border:1.5px solid var(--blue); }
+  .btn-whatsapp{ background:#25d366; color:#fff; }
+  .btn-success{ background:#1f9d55; color:#fff; }
+  .view-toolbar button:disabled{ opacity:.5; cursor:not-allowed; }
+
+  /* ---------- lista ---------- */
+  .list-search{ display:flex; gap:8px; margin-bottom:14px; }
+  .list-search input{
+    flex:1; padding:11px 14px; border-radius:9px; border:1px solid #d7dee8;
+    font-size:14px; font-family:'Inter', sans-serif;
+  }
+  .list-search button{
+    border:none; padding:0 18px; border-radius:9px; background:var(--blue);
+    color:#fff; font-weight:600; cursor:pointer;
+  }
+  .crud-table-wrap{
+    background:#fff; border-radius:14px; overflow:hidden;
+    box-shadow:0 6px 20px rgba(13,47,87,0.07);
+  }
+  .crud-table{ width:100%; border-collapse:collapse; }
+  .crud-table th, .crud-table td{
+    padding:12px 14px; border-bottom:1px solid #eef2f7; text-align:left; font-size:13.5px;
+  }
+  .crud-table th{
+    background:#f6f9fd; font-weight:700; color:var(--navy);
+    text-transform:uppercase; font-size:11px; letter-spacing:.4px;
+  }
+  .crud-table button{
+    margin:2px; padding:6px 10px; border:none; border-radius:7px;
+    cursor:pointer; font-size:12.5px; font-weight:600;
+  }
+  .btn-ver{ background:#eaf1fb; color:var(--blue); }
+  .btn-edit{ background:#fff4dd; color:#b8791a; }
+  .btn-del{ background:#fdecec; color:var(--danger); }
+  .btn-pdf{ background:#e6f7f9; color:var(--cyan-dark); }
+  .crud-empty{ text-align:center; padding:24px; color:var(--muted); font-style:italic; }
+
+  /* ---------- sheet ---------- */
+  .sheet{
+    max-width:920px; margin:0 auto; background:var(--card);
+    border-radius:16px; overflow:hidden; box-shadow:0 10px 40px rgba(13,47,87,0.12);
+  }
+  #sheet.locked input, #sheet.locked textarea{ pointer-events:none; background:transparent !important; border-bottom-color:transparent !important; }
+  #sheet.locked .add-row-btn, #sheet.locked .del-row, #sheet.locked .empty-msg{ display:none !important; }
+
+  .header{
+    display:flex; justify-content:space-between; align-items:flex-start; gap:20px;
+    padding:28px 32px 20px; flex-wrap:wrap;
+  }
+  .brand{ display:flex; align-items:center; gap:14px; }
+  .brand img{ height:50px; display:block; }
+  .brand-text .tagline{ font-size:12px; color:var(--muted); margin-top:2px; }
+  .contact-lines{ margin-top:8px; font-size:12px; color:var(--muted); line-height:1.5; }
+  .contact-lines input{ font-size:12px; color:var(--muted); border-bottom-color:transparent; padding:1px 0; }
+  .contact-lines input:focus{ border-bottom-color:var(--cyan-dark); }
+
+  .quote-box{ text-align:right; min-width:200px; flex:1; }
+  .quote-title{ font-family:'Poppins', sans-serif; font-weight:800; font-size:20px; color:var(--blue); letter-spacing:.5px; }
+  .quote-num{ font-size:13px; color:var(--muted); margin-top:2px; display:flex; align-items:center; justify-content:flex-end; gap:4px; }
+  .quote-num input{ width:90px; text-align:right; font-weight:700; color:var(--navy); }
+  .mini-box{ margin-top:10px; background:var(--blue-light); border-radius:8px; padding:7px 12px; font-size:12.5px; text-align:left; }
+  .mini-box .mb-label{ color:var(--blue); font-weight:700; font-size:10px; text-transform:uppercase; letter-spacing:.6px; margin-bottom:2px; }
+  .mini-box input{ border-bottom-color:transparent; padding:0; }
+
+  .wave-divider{ width:100%; display:block; height:12px; }
+
+  .client-card{
+    margin:4px 32px 22px; background:#fafcff; border:1px solid var(--border);
+    border-radius:12px; padding:16px 20px;
+    display:grid; grid-template-columns:1fr 1fr; gap:12px 26px;
+  }
+  .field .f-label{
+    color:var(--blue); font-weight:700; font-size:10.5px;
+    text-transform:uppercase; letter-spacing:.5px; margin-bottom:3px;
+  }
+  .field.full{ grid-column: 1 / -1; }
+
+  .items-wrap{ padding:0 32px; }
+  table.items-table{ width:100%; border-collapse:collapse; table-layout:fixed; }
+  .items-table thead th{
+    background:var(--navy); color:#fff; font-size:11px; font-weight:600;
+    text-transform:uppercase; letter-spacing:.3px; padding:10px 8px; text-align:left;
+  }
+  .items-table thead th:first-child{ border-top-left-radius:8px; border-bottom-left-radius:8px; }
+  .items-table thead th:last-child{ border-top-right-radius:8px; border-bottom-right-radius:8px; }
+  .items-table thead th.hc-num, .items-table thead th.hc-check{ text-align:center; }
+  .items-table thead th.hc-money{ text-align:right; }
+  .items-table tbody tr{ border-bottom:1px solid var(--border); }
+  .items-table tbody tr:hover{ background:#f8fbfe; }
+  .items-table tbody td{ font-size:13.5px; padding:9px 8px; vertical-align:middle; }
+  .cell-cant{ text-align:center; }
+  .cell-unit, .cell-disc, .cell-total{ text-align:right; white-space:nowrap; }
+  .cell-iva{ text-align:center; }
+  .cell-total{ font-weight:600; }
+  .cell-unit input, .cell-disc input{ text-align:right; display:inline-block; width:72px; }
+  .cell-cant input{ text-align:center; width:40px; }
+  .cur{ color:var(--muted); font-size:12px; }
+
+  .del-row{
+    background:none; border:none; color:var(--danger); font-size:16px;
+    cursor:pointer; line-height:1; padding:6px 8px; border-radius:6px;
+  }
+  .del-row:hover{ background:#fdecec; }
+
+  .empty-msg{ text-align:center; color:var(--muted); font-size:13px; padding:20px 0; font-style:italic; }
+
+  .add-row-btn{
+    background:#fff; border:1.5px dashed var(--cyan-dark); color:var(--cyan-dark);
+    font-size:13px; font-weight:600; padding:10px 16px; border-radius:8px;
+    cursor:pointer; margin:12px 0 6px; width:100%;
+  }
+  .add-row-btn:hover{ background:#effcfd; }
+
+  .bottom-section{ display:flex; justify-content:flex-end; padding:22px 32px 6px; }
+  .validity-note{ font-size:12px; color:var(--muted); margin:0 32px 18px; }
+  .totals-card{
+    background:#fafcff; border:1px solid var(--border); border-radius:12px;
+    padding:14px 20px; min-width:280px; width:100%; max-width:340px;
+  }
+  .totals-card table{ width:100%; border-collapse:collapse; }
+  .totals-card td{ font-size:13.5px; padding:5px 0; }
+  .totals-card td.tlabel{ color:var(--muted); }
+  .totals-card td.tval{ text-align:right; font-weight:600; white-space:nowrap; }
+  .totals-card tr.total-row td{
+    border-top:2px solid var(--border); padding-top:9px;
+    font-size:16px; font-weight:800; color:var(--blue);
+  }
+  .end-space{ height:20px; }
+
+  /* ---------- PDF generating ---------- */
+  body.generating-pdf .toolbar,
+  body.generating-pdf .del-row,
+  body.generating-pdf .add-row-btn,
+  body.generating-pdf .empty-msg{ display:none !important; }
+  body.generating-pdf input[type="text"], body.generating-pdf input[type="number"]{
+    border-bottom:none !important; background:none !important;
+  }
+
+  /* ---------- print ---------- */
+  @media print{
+    body{ background:#fff; padding:0; margin:0; }
+    .sidebar, .view-toolbar, .dash-title, .list-search{ display:none !important; }
+    .app-layout{ display:block; }
+    .main-area{ padding:0; }
+    .view:not(.active){ display:none !important; }
+    #view-nueva .sheet{ box-shadow:none; border-radius:0; margin:0; max-width:100%; }
+    .del-row, .add-row-btn, .empty-msg{ display:none; }
+    input[type="text"], input[type="number"], textarea.desc{
+      border-bottom:none !important; background:none !important; padding:0 !important;
+    }
+    textarea.desc{ overflow:visible !important; }
+    @page{ size: A4; margin: 10mm; }
+  }
+
+  /* ---------- responsive ---------- */
+  @media (max-width:820px){
+    .app-layout{ grid-template-columns:1fr; }
+    .sidebar{
+      position:relative; height:auto; flex-direction:row; flex-wrap:wrap;
+      align-items:center; padding:12px;
+    }
+    .sidebar h1, .sidebar .sub, .sidebar .side-footer{ display:none; }
+    .sidebar nav{ flex-direction:row; flex-wrap:wrap; width:100%; }
+    .sidebar button.nav-btn{ flex:1; justify-content:center; font-size:12.5px; padding:9px; }
+    .main-area{ padding:16px 14px 50px; }
+    .header{ padding:22px 18px 16px; }
+    .quote-box{ text-align:left; width:100%; }
+    .quote-num{ justify-content:flex-start; }
+    .client-card{ grid-template-columns:1fr; margin:4px 18px 18px; }
+    .items-wrap, .validity-note{ padding-left:18px; padding-right:18px; margin-left:0; margin-right:0; }
+    .bottom-section{ padding:18px 18px 6px; justify-content:stretch; }
+    .totals-card{ max-width:100%; }
+    .items-table thead{ display:none; }
+    .items-table, .items-table tbody{ display:block; width:100%; }
+    .items-table tr{
+      display:block; background:#fafcff; border:1px solid var(--border);
+      border-radius:10px; padding:10px 14px; margin-bottom:10px;
+    }
+    .items-table td{
+      display:flex; align-items:center; justify-content:space-between;
+      padding:6px 0; border-bottom:1px dashed #eef1f5; gap:10px;
+    }
+    .items-table td:last-child{ border-bottom:none; }
+    td[data-label]::before{
+      content: attr(data-label); font-size:11px; color:var(--muted);
+      font-weight:700; text-transform:uppercase; letter-spacing:.3px; flex-shrink:0;
+    }
+    .items-table td.cell-desc{ display:block; }
+    .items-table td.cell-desc::before{
+      content: attr(data-label); display:block; margin-bottom:4px;
+      font-size:11px; color:var(--muted); font-weight:700;
+      text-transform:uppercase; letter-spacing:.3px;
+    }
+    .cell-unit input, .cell-disc input, .cell-cant input{ width:auto; }
+  }
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script src="js/supabase.js"></script>
+</head>
+<body>
+
+<div class="app-layout">
+
+  <aside class="sidebar">
+    <h1>Aires Universal</h1>
+    <div class="sub">Sistema de cotizaciones</div>
+    <nav>
+      <button class="nav-btn active" data-view="dashboard" onclick="mostrarVista('dashboard')">📊 Dashboard</button>
+      <button class="nav-btn" data-view="nueva" onclick="mostrarVista('nueva')">➕ Nueva cotización</button>
+      <button class="nav-btn" data-view="lista" onclick="mostrarVista('lista')">📋 Cotizaciones</button>
+    </nav>
+    <div class="side-footer">v1.0 · Aire acondicionado &amp; climatización</div>
+  </aside>
+
+  <main class="main-area">
+
+    <!-- DASHBOARD -->
+    <section id="view-dashboard" class="view active">
+      <h2 class="dash-title">Resumen general</h2>
+      <div class="dash-grid">
+        <div class="dash-card"><div class="dc-label">Total cotizaciones</div><div class="dc-value" id="statTotal">0</div></div>
+        <div class="dash-card"><div class="dc-label">Este mes</div><div class="dc-value" id="statMes">0</div></div>
+        <div class="dash-card"><div class="dc-label">Monto total</div><div class="dc-value small" id="statMonto">₡ 0</div></div>
+        <div class="dash-card"><div class="dc-label">Monto este mes</div><div class="dc-value small" id="statMontoMes">₡ 0</div></div>
+      </div>
+      <h2 class="dash-title" style="font-size:17px;">Últimas 5 cotizaciones</h2>
+      <div class="crud-table-wrap">
+        <table class="crud-table">
+          <thead><tr><th>Número</th><th>Fecha</th><th>Cliente</th><th>Total</th></tr></thead>
+          <tbody id="dashRecientes"><tr><td colspan="4" class="crud-empty">Cargando...</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- NUEVA / EDITAR -->
+    <section id="view-nueva" class="view">
+      <div class="view-toolbar">
+        <button class="btn-primary" id="btnGenerar" onclick="activarEdicion()">✏️ Generar cotización</button>
+        <button class="btn-success" id="btnGuardar" onclick="guardarCotizacion()" disabled>💾 Guardar</button>
+        <button class="btn-secondary" onclick="handleDownload()">⬇ Descargar PDF</button>
+        <button class="btn-whatsapp" onclick="handleShare()">📤 Compartir</button>
+        <button class="btn-secondary" onclick="nuevaCotizacion()">🆕 Limpiar</button>
+      </div>
+
+      <!-- ============ SHEET ============ -->
+      <div class="sheet locked" id="sheet">
+        <div class="header">
+          <div class="brand">
+            <div class="brand-text">
+              <div class="tagline">Aire acondicionado &amp; climatización</div>
+              <div class="contact-lines">
+                <div><input type="text" value="Aguas Zarcas"></div>
+                <div>Tel: 8561-9686</div>
+                <div><input type="text" value="airesuniversal@gmail.com"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="quote-box">
+            <div class="quote-title">COTIZACIÓN</div>
+            <div class="quote-num">N° <input type="text" id="quoteNum" value="AUTOMÁTICO"></div>
+            <div class="mini-box">
+              <div class="mb-label">Fecha</div>
+              <input type="text" id="fecha">
+            </div>
+          </div>
+        </div>
+
+        <svg class="wave-divider" viewBox="0 0 900 14" preserveAspectRatio="none">
+          <path d="M0 8 Q 225 -6 450 8 T 900 8" fill="none" stroke="#2fb6c9" stroke-width="3" opacity="0.5"/>
+        </svg>
+
+        <div class="client-card">
+          <div class="field"><div class="f-label">Cliente</div><input type="text" id="cliente" placeholder="Nombre del cliente"></div>
+          <div class="field"><div class="f-label">Teléfono</div><input type="text" id="telefono" placeholder="0000-0000"></div>
+          <div class="field full"><div class="f-label">Dirección</div><input type="text" id="direccion" placeholder="Dirección del cliente"></div>
+          <div class="field"><div class="f-label">Vendedor</div><input type="text" id="vendedor" placeholder="Nombre del vendedor"></div>
+          <div class="field"><div class="f-label">Observación</div><input type="text" id="observacion" placeholder="N/A"></div>
+        </div>
+
+        <div class="items-wrap">
+          <table class="items-table">
+            <colgroup>
+              <col style="width:42%"><col style="width:7%"><col style="width:14%">
+              <col style="width:12%"><col style="width:8%"><col style="width:14%"><col style="width:3%">
+            </colgroup>
+            <thead>
+              <tr>
+                <th class="cell-desc">Descripción</th>
+                <th class="hc-num">Cant</th>
+                <th class="hc-money">Precio Unit</th>
+                <th class="hc-money">Descuento</th>
+                <th class="hc-check">IVA 13%</th>
+                <th class="hc-money">Total</th>
+                <th class="hc-del"></th>
+              </tr>
+            </thead>
+            <tbody id="itemsBody"></tbody>
+          </table>
+          <div class="empty-msg" id="emptyMsg">Sin líneas todavía — pulsa "Generar cotización" para empezar.</div>
+          <button class="add-row-btn" id="addRowBtnBottom">＋ Agregar línea</button>
+        </div>
+
+        <div class="validity-note">
+          Válido por <input type="text" id="validDays" value="15" style="width:24px; display:inline-block; border-bottom:1px dashed #c3cede;"> días a partir de su emisión.
+        </div>
+
+        <div class="bottom-section">
+          <div class="totals-card">
+            <table>
+              <tr><td class="tlabel">Subtotal</td><td class="tval">₡<span id="subtotal">0</span></td></tr>
+              <tr><td class="tlabel">IVA</td><td class="tval">₡<span id="iva">0</span></td></tr>
+              <tr class="total-row"><td class="tlabel">Total</td><td class="tval">₡<span id="total">0</span></td></tr>
+            </table>
+          </div>
+        </div>
+        <div class="end-space"></div>
+      </div>
+      <!-- ============ /SHEET ============ -->
+
+    </section>
+
+    <!-- LISTA -->
+    <section id="view-lista" class="view">
+      <h2 class="dash-title">Cotizaciones guardadas</h2>
+      <div class="list-search">
+        <input id="crudSearch" type="text" placeholder="Buscar por número o cliente">
+        <button type="button" onclick="buscarDesdePanel()">Buscar</button>
+        <button type="button" class="btn-secondary" style="padding:0 18px;border-radius:9px;" onclick="cargarCotizaciones()">Recargar</button>
+      </div>
+      <div class="crud-table-wrap">
+        <table class="crud-table">
+          <thead>
+            <tr><th>Número</th><th>Fecha</th><th>Cliente</th><th>Total</th><th>Acciones</th></tr>
+          </thead>
+          <tbody id="crudBody"><tr><td colspan="5" class="crud-empty">Cargando...</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- ============ SCRIPT INLINE (helpers visuales + PDF) ============ -->
+<script>
+function parseNum(str){
+  if(!str) return 0;
+  const n = parseFloat(String(str).replace(/[^\d.-]/g,''));
+  return isNaN(n) ? 0 : n;
+}
+function formatNum(n){
+  const rounded = Math.round(n || 0);
+  const neg = rounded < 0;
+  const s = Math.abs(rounded).toString();
+  let out = '';
+  for(let i=0; i<s.length; i++){
+    const posFromEnd = s.length - i;
+    out += s[i];
+    if(posFromEnd > 1 && posFromEnd % 3 === 1){ out += ','; }
+  }
+  return (neg ? '-' : '') + out;
+}
+function getTextWidth(text, font){
+  const canvas = getTextWidth.canvas || (getTextWidth.canvas = document.createElement('canvas'));
+  const ctx = canvas.getContext('2d');
+  ctx.font = font;
+  return ctx.measureText(text).width;
+}
+function autosizeInput(el){
+  if(el.classList.contains('desc')) return;
+  el.classList.add('autosize');
+  const cs = window.getComputedStyle(el);
+  const font = `${cs.fontStyle} ${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+  const text = el.value.length ? el.value : (el.placeholder || '');
+  const width = getTextWidth(text, font) + 16;
+  el.style.width = Math.max(width, 18) + 'px';
+}
+function autosizeAll(scope){
+  (scope || document).querySelectorAll('input[type="text"]').forEach(autosizeInput);
+  (scope || document).querySelectorAll('textarea.desc').forEach(autoResizeDesc);
+}
+function autoResizeDesc(el){
+  el.style.height = 'auto';
+  el.style.height = el.scrollHeight + 'px';
+}
+document.addEventListener('input', (e)=>{
+  if(e.target.matches('input[type="text"]')) autosizeInput(e.target);
+  if(e.target.matches('textarea.desc')) autoResizeDesc(e.target);
+});
+let descResizeTimer;
+window.addEventListener('resize', ()=>{
+  clearTimeout(descResizeTimer);
+  descResizeTimer = setTimeout(()=>{
+    document.querySelectorAll('textarea.desc').forEach(autoResizeDesc);
+  }, 120);
+});
+
+function setToday(){
+  const d = new Date();
+  const dd = String(d.getDate()).padStart(2,'0');
+  const mm = String(d.getMonth()+1).padStart(2,'0');
+  const yyyy = d.getFullYear();
+  const f = document.getElementById('fecha');
+  if(f) f.value = dd + '/' + mm + '/' + yyyy;
+}
+function toggleEmptyMsg(){
+  const body = document.getElementById('itemsBody');
+  const msg = document.getElementById('emptyMsg');
+  if(body && msg) msg.style.display = body.rows.length ? 'none' : 'block';
+}
+function recalcRow(el){
+  const row = el.closest('tr');
+  const cant = parseNum(row.querySelector('.cant').value);
+  const unit = parseNum(row.querySelector('.unit').value);
+  const disc = parseNum(row.querySelector('.disc').value);
+  const total = Math.max(0, cant * unit - disc);
+  row.querySelector('.total').innerText = formatNum(total);
+  recalcTotals();
+}
+function recalcTotals(){
+  let subtotal = 0, ivaTotal = 0;
+  const rows = document.querySelectorAll('#itemsBody tr');
+  for(let i=0; i<rows.length; i++){
+    const row = rows[i];
+    const cant = parseNum(row.querySelector('.cant').value);
+    const unit = parseNum(row.querySelector('.unit').value);
+    const disc = parseNum(row.querySelector('.disc').value);
+    const rowTotal = Math.max(0, cant * unit - disc);
+    subtotal += rowTotal;
+    if(row.querySelector('.iva-check').checked) ivaTotal += rowTotal * 0.13;
+  }
+  const total = subtotal + ivaTotal;
+  const s = document.getElementById('subtotal');
+  const i = document.getElementById('iva');
+  const t = document.getElementById('total');
+  if(s) s.innerText = formatNum(subtotal);
+  if(i) i.innerText = formatNum(ivaTotal);
+  if(t) t.innerText = formatNum(total);
+}
+function delRow(btn){
+  btn.closest('tr').remove();
+  toggleEmptyMsg();
+  recalcTotals();
+}
+function addRow(){
+  const body = document.getElementById('itemsBody');
+  const row = document.createElement('tr');
+  row.innerHTML = `
+    <td class="cell-desc" data-label="Descripción">
+      <textarea class="desc" rows="1" placeholder="Descripción del servicio o producto"></textarea>
+    </td>
+    <td class="cell-cant" data-label="Cant">
+      <input type="text" class="cant" value="1" inputmode="decimal" oninput="recalcRow(this)">
+    </td>
+    <td class="cell-unit" data-label="Precio Unit">
+      <span class="cur">₡</span><input type="text" class="unit" value="0" inputmode="decimal" oninput="recalcRow(this)">
+    </td>
+    <td class="cell-disc" data-label="Descuento">
+      <span class="cur">₡</span><input type="text" class="disc" value="0" inputmode="decimal" oninput="recalcRow(this)">
+    </td>
+    <td class="cell-iva" data-label="IVA 13%">
+      <input type="checkbox" class="iva-check" checked onchange="recalcTotals()">
+    </td>
+    <td class="cell-total" data-label="Total">
+      <span class="cur">₡</span><span class="total">0</span>
+    </td>
+    <td class="cell-del">
+      <button class="del-row" onclick="delRow(this)">✕</button>
+    </td>
+  `;
+  body.appendChild(row);
+  toggleEmptyMsg();
+  recalcTotals();
+  autosizeAll(row);
+}
+
+/* ---------- PDF ---------- */
+function buildFileName(){
+  const num = (document.getElementById('quoteNum').value || '0001').trim();
+  return `Cotizacion-${num || '0001'}.pdf`;
+}
+async function generatePdfBlob(){
+  document.body.classList.add('generating-pdf');
+  const sheet = document.getElementById('sheet');
+  const opt = {
+    margin: 0,
+    filename: buildFileName(),
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: { scale: 2, useCORS: true },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+  };
+  try{
+    return await html2pdf().set(opt).from(sheet).outputPdf('blob');
+  } finally {
+    document.body.classList.remove('generating-pdf');
+  }
+}
+async function handleDownload(){
+  try{
+    const blob = await generatePdfBlob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = buildFileName();
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  } catch(err){
+    console.error(err);
+    alert('No se pudo generar el PDF.');
+  }
+}
+async function handleShare(){
+  try{
+    const blob = await generatePdfBlob();
+    const filename = buildFileName();
+    const file = new File([blob], filename, { type: 'application/pdf' });
+    if(navigator.canShare && navigator.canShare({ files: [file] })){
+      await navigator.share({ files:[file], title:'Cotización - Aires Universal', text:'Te comparto la cotización.' });
+    } else {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = filename;
+      document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(url);
+      alert('Se descargó el PDF. Ábrelo desde WhatsApp y adjúntalo.');
+      window.open('https://wa.me/?text=' + encodeURIComponent('Te comparto la cotización de Aires Universal.'), '_blank');
+    }
+  } catch(err){
+    if(err.name !== 'AbortError'){ console.error(err); alert('No se pudo compartir.'); }
+  }
+}
+
+document.getElementById('addRowBtnBottom').addEventListener('click', addRow);
+setToday();
+toggleEmptyMsg();
+recalcTotals();
+autosizeAll();
+</script>
+
+<!-- app.js y pdf.js al final para que encuentren las funciones inline -->
+<script src="js/app.js"></script>
+<script src="js/pdf.js"></script>
+</body>
+</html>
