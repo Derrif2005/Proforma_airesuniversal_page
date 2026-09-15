@@ -311,6 +311,9 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <script src="js/supabase.js"></script>
+<!-- Logo incrustado como base64: se muestra siempre (pantalla y PDF), sin
+     depender de ninguna ruta de archivo ni de conexión. -->
+<script src="js/logo-data.js"></script>
 </head>
 <body>
 
@@ -353,7 +356,6 @@
         <button class="btn-primary" id="btnGenerar" onclick="activarEdicion()">✏️ Generar cotización</button>
         <button class="btn-success" id="btnGuardar" onclick="guardarCotizacion()" disabled>💾 Guardar</button>
         <button class="btn-secondary" onclick="handleDownload()">⬇ Descargar PDF</button>
-        <button class="btn-whatsapp" onclick="handleShare()">📤 Compartir</button>
         <button class="btn-secondary" onclick="nuevaCotizacion()">🆕 Limpiar</button>
       </div>
 
@@ -361,6 +363,7 @@
       <div class="sheet locked" id="sheet">
         <div class="header">
           <div class="brand">
+            <img src="" alt="Aires Universal" id="logoBrand">
             <div class="brand-text">
               <div class="tagline">Aire acondicionado &amp; climatización</div>
               <div class="contact-lines">
@@ -626,26 +629,13 @@ async function handleDownload(){
     alert('No se pudo generar el PDF.');
   }
 }
-async function handleShare(){
-  try{
-    const blob = await generatePdfBlob();
-    const filename = buildFileName();
-    const file = new File([blob], filename, { type: 'application/pdf' });
-    if(navigator.canShare && navigator.canShare({ files: [file] })){
-      await navigator.share({ files:[file], title:'Cotización - Aires Universal', text:'Te comparto la cotización.' });
-    } else {
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url; a.download = filename;
-      document.body.appendChild(a); a.click(); a.remove();
-      URL.revokeObjectURL(url);
-      alert('Se descargó el PDF. Ábrelo desde WhatsApp y adjúntalo.');
-      window.open('https://wa.me/?text=' + encodeURIComponent('Te comparto la cotización de Aires Universal.'), '_blank');
-    }
-  } catch(err){
-    if(err.name !== 'AbortError'){ console.error(err); alert('No se pudo compartir.'); }
-  }
-}
+// Logo permanente: se asigna desde el base64 incrustado (js/logo-data.js),
+// así siempre se ve en pantalla y en el PDF, sin depender de una ruta de
+// archivo ni de conexión.
+(function(){
+  const logo = document.getElementById('logoBrand');
+  if(logo && window.LOGO_BASE64){ logo.src = window.LOGO_BASE64; }
+})();
 
 document.getElementById('addRowBtnBottom').addEventListener('click', addRow);
 setToday();
