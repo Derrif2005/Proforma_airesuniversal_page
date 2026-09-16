@@ -155,6 +155,7 @@
   }
   #sheet.locked input, #sheet.locked textarea{ pointer-events:none; background:transparent !important; border-bottom-color:transparent !important; }
   #sheet.locked .add-row-btn, #sheet.locked .del-row, #sheet.locked .empty-msg{ display:none !important; }
+  #sheetFicha.locked input, #sheetFicha.locked textarea{ pointer-events:none; background:transparent !important; border-bottom-color:transparent !important; }
 
   .header{
     display:flex; justify-content:space-between; align-items:flex-start; gap:20px;
@@ -256,7 +257,7 @@
     .app-layout{ display:block; }
     .main-area{ padding:0; }
     .view:not(.active){ display:none !important; }
-    #view-nueva .sheet{ box-shadow:none; border-radius:0; margin:0; max-width:100%; }
+    #view-nueva .sheet, #view-fichaNueva .sheet{ box-shadow:none; border-radius:0; margin:0; max-width:100%; }
     .del-row, .add-row-btn, .empty-msg{ display:none; }
     input[type="text"], input[type="number"], textarea.desc{
       border-bottom:none !important; background:none !important; padding:0 !important;
@@ -305,6 +306,42 @@
       text-transform:uppercase; letter-spacing:.3px;
     }
     .cell-unit input, .cell-disc input, .cell-cant input{ width:auto; }
+    .ficha-card, .equipo-card{ grid-template-columns:1fr; margin:4px 18px 18px; }
+  }
+
+  /* ---------- fichas técnicas (reutiliza el estilo de .client-card) ---------- */
+  .ficha-card, .equipo-card{
+    margin:4px 32px 22px; background:#fafcff; border:1px solid var(--border);
+    border-radius:12px; padding:16px 20px;
+    display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px 26px;
+  }
+  .ficha-card{ grid-template-columns:1fr 1fr; }
+  .chk-row{
+    margin:0 32px 22px; display:flex; flex-wrap:wrap; gap:10px 28px;
+    align-items:center; font-size:13px; color:var(--text);
+  }
+  .chk-row label{ display:flex; align-items:center; gap:7px; cursor:pointer; }
+  .section-label{
+    margin:0 32px 8px; font-size:11px; font-weight:700; color:var(--blue);
+    text-transform:uppercase; letter-spacing:.5px;
+  }
+  .textarea-block{ margin:0 32px 20px; }
+  .textarea-block .f-label{
+    color:var(--blue); font-weight:700; font-size:10.5px;
+    text-transform:uppercase; letter-spacing:.5px; margin-bottom:5px;
+  }
+  .textarea-block textarea.desc{
+    border:1px solid var(--border); border-radius:8px; padding:10px 12px;
+    background:#fafcff; min-height:44px;
+  }
+  .textarea-block textarea.desc:focus{ border-color:var(--cyan-dark); background:#eefbfc; }
+  .textarea-block.observaciones textarea.desc{
+    min-height:120px;
+    background-image: repeating-linear-gradient(to bottom, transparent, transparent 26px, var(--border) 27px);
+    line-height:27px; padding-top:8px;
+  }
+  @media print{
+    .ficha-card, .equipo-card, .chk-row, .textarea-block{ break-inside:avoid; page-break-inside:avoid; }
   }
 </style>
 
@@ -326,6 +363,8 @@
       <button class="nav-btn active" data-view="dashboard" onclick="mostrarVista('dashboard')">📊 Dashboard</button>
       <button class="nav-btn" data-view="nueva" onclick="mostrarVista('nueva')">➕ Nueva cotización</button>
       <button class="nav-btn" data-view="lista" onclick="mostrarVista('lista')">📋 Cotizaciones</button>
+      <button class="nav-btn" data-view="fichaNueva" onclick="mostrarVista('fichaNueva')">🧾 Nueva ficha técnica</button>
+      <button class="nav-btn" data-view="fichaLista" onclick="mostrarVista('fichaLista')">📄 Fichas técnicas</button>
     </nav>
     <div class="side-footer">v1.0 · Aire acondicionado &amp; climatización</div>
   </aside>
@@ -452,6 +491,114 @@
             <tr><th>Número</th><th>Fecha</th><th>Cliente</th><th>Total</th><th>Acciones</th></tr>
           </thead>
           <tbody id="crudBody"><tr><td colspan="5" class="crud-empty">Cargando...</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- NUEVA FICHA TÉCNICA -->
+    <section id="view-fichaNueva" class="view">
+      <div class="view-toolbar">
+        <button class="btn-primary" id="btnGenerarFicha" onclick="activarEdicionFicha()">✏️ Generar ficha</button>
+        <button class="btn-success" id="btnGuardarFicha" onclick="guardarFicha()" disabled>💾 Guardar</button>
+        <button class="btn-secondary" onclick="handleDownloadFicha()">⬇ Descargar PDF</button>
+        <button class="btn-secondary" onclick="nuevaFicha()">🆕 Limpiar</button>
+      </div>
+
+      <!-- ============ SHEET FICHA ============ -->
+      <div class="sheet locked" id="sheetFicha">
+        <div class="header">
+          <div class="brand">
+            <img src="" alt="Aires Universal" id="logoBrandFicha">
+            <div class="brand-text">
+              <div class="tagline">Aire acondicionado &amp; climatización</div>
+              <div class="contact-lines">
+                <div>Cédula 2-534-974</div>
+                <div>Tel: 8561-9686</div>
+                <div>airesuniversal@gmail.com</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="quote-box">
+            <div class="quote-title">FICHA TÉCNICA</div>
+            <div class="quote-num">N° <input type="text" id="fichaNum" value="AUTOMÁTICO"></div>
+            <div class="mini-box">
+              <div class="mb-label">Fecha</div>
+              <input type="text" id="fFecha">
+            </div>
+          </div>
+        </div>
+
+        <svg class="wave-divider" viewBox="0 0 900 14" preserveAspectRatio="none">
+          <path d="M0 8 Q 225 -6 450 8 T 900 8" fill="none" stroke="#2fb6c9" stroke-width="3" opacity="0.5"/>
+        </svg>
+
+        <div class="ficha-card">
+          <div class="field"><div class="f-label">Cliente</div><input type="text" id="fCliente" placeholder="Nombre del cliente"></div>
+          <div class="field"><div class="f-label">Cédula</div><input type="text" id="fCedula" placeholder="Cédula del cliente"></div>
+          <div class="field"><div class="f-label">Teléfono</div><input type="text" id="fTelefono" placeholder="0000-0000"></div>
+          <div class="field full"><div class="f-label">Dirección</div><input type="text" id="fDireccion" placeholder="Dirección del cliente"></div>
+          <div class="field"><div class="f-label">Contacto</div><input type="text" id="fContacto" placeholder="Persona de contacto"></div>
+          <div class="field"><div class="f-label">Técnico</div><input type="text" id="fTecnico" placeholder="Técnico responsable"></div>
+          <div class="field"><div class="f-label">Activo</div><input type="text" id="fActivo" placeholder="N° de activo"></div>
+          <div class="field"><div class="f-label">Persona a cargo</div><input type="text" id="fPersonaCargo" placeholder="Persona a cargo"></div>
+          <div class="field full"><div class="f-label">Referencia</div><input type="text" id="fReferencia" placeholder="Referencia"></div>
+        </div>
+
+        <div class="section-label">Datos del equipo</div>
+        <div class="equipo-card">
+          <div class="field"><div class="f-label">Marca</div><input type="text" id="fMarca" placeholder="Marca"></div>
+          <div class="field"><div class="f-label">Modelo</div><input type="text" id="fModelo" placeholder="Modelo"></div>
+          <div class="field"><div class="f-label">Tipo de equipo</div><input type="text" id="fTipoEquipo" placeholder="Tipo de equipo"></div>
+          <div class="field"><div class="f-label">Capacidad BTU</div><input type="text" id="fBtu" placeholder="Capacidad BTU"></div>
+          <div class="field"><div class="f-label">Tiempo de garantía</div><input type="text" id="fGarantia" placeholder="Ej: 30 días"></div>
+          <div class="field"><div class="f-label">Tipo de refrigerante</div><input type="text" id="fRefrigerante" placeholder="Ej: 134"></div>
+          <div class="field"><div class="f-label">Voltaje</div><input type="text" id="fVoltaje" placeholder="Voltaje"></div>
+          <div class="field"><div class="f-label">Amperaje</div><input type="text" id="fAmperaje" placeholder="Amperaje"></div>
+          <div class="field"><div class="f-label">Antes</div><input type="text" id="fAntes" placeholder="Lectura antes"></div>
+          <div class="field"><div class="f-label">Después</div><input type="text" id="fDespues" placeholder="Lectura después"></div>
+        </div>
+
+        <div class="chk-row">
+          <label><input type="checkbox" id="fInstalacion"> Instalación</label>
+          <label><input type="checkbox" id="fMantPrev"> Mantenimiento preventivo</label>
+          <label><input type="checkbox" id="fMantCorr"> Mantenimiento correctivo</label>
+        </div>
+
+        <div class="ficha-card" style="grid-template-columns:1fr;">
+          <div class="field full"><div class="f-label">Ubicación del equipo</div><input type="text" id="fUbicacion" placeholder="Ubicación del equipo"></div>
+        </div>
+
+        <div class="textarea-block">
+          <div class="f-label">Materiales utilizados</div>
+          <textarea class="desc" id="fMateriales" rows="2" placeholder="Materiales, repuestos o insumos utilizados"></textarea>
+        </div>
+
+        <div class="textarea-block observaciones">
+          <div class="f-label">Observaciones técnicas</div>
+          <textarea class="desc" id="fObservaciones" rows="5" placeholder="Observaciones técnicas del trabajo realizado"></textarea>
+        </div>
+
+        <div class="end-space"></div>
+      </div>
+      <!-- ============ /SHEET FICHA ============ -->
+    </section>
+
+    <!-- LISTA DE FICHAS TÉCNICAS -->
+    <section id="view-fichaLista" class="view">
+      <h2 class="dash-title">Fichas técnicas guardadas</h2>
+      <div class="list-search">
+        <input id="fichaSearch" type="text" placeholder="Buscar por número, cliente o técnico">
+        <button type="button" onclick="buscarFichaDesdePanel()">Buscar</button>
+        <button type="button" class="btn-secondary" style="padding:0 18px;border-radius:9px;" onclick="cargarFichas()">Recargar</button>
+        <button type="button" class="btn-primary" style="padding:0 18px;border-radius:9px;" onclick="nuevaFicha()">＋ Nueva ficha</button>
+      </div>
+      <div class="crud-table-wrap">
+        <table class="crud-table">
+          <thead>
+            <tr><th>Número</th><th>Fecha</th><th>Cliente</th><th>Equipo</th><th>Técnico</th><th>Acciones</th></tr>
+          </thead>
+          <tbody id="fichaCrudBody"><tr><td colspan="6" class="crud-empty">Cargando...</td></tr></tbody>
         </table>
       </div>
     </section>
@@ -633,8 +780,11 @@ async function handleDownload(){
 // así siempre se ve en pantalla y en el PDF, sin depender de una ruta de
 // archivo ni de conexión.
 (function(){
-  const logo = document.getElementById('logoBrand');
-  if(logo && window.LOGO_BASE64){ logo.src = window.LOGO_BASE64; }
+  if(!window.LOGO_BASE64) return;
+  ['logoBrand', 'logoBrandFicha'].forEach(id => {
+    const logo = document.getElementById(id);
+    if(logo) logo.src = window.LOGO_BASE64;
+  });
 })();
 
 document.getElementById('addRowBtnBottom').addEventListener('click', addRow);
@@ -646,6 +796,7 @@ autosizeAll();
 
 <!-- app.js y pdf.js al final para que encuentren las funciones inline -->
 <script src="js/app.js"></script>
+<script src="js/fichas.js"></script>
 <script src="js/pdf.js"></script>
 </body>
 </html>

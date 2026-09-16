@@ -17,6 +17,10 @@ function mostrarVista(nombre){
   if(nombre === 'nueva' && !window.cotizacionEditandoId){
     bloquearSheet();
   }
+  if(nombre === 'fichaLista') cargarFichas();
+  if(nombre === 'fichaNueva' && !window.fichaEditandoId){
+    bloquearSheetFicha();
+  }
 }
 
 /* =========================================================
